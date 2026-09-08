@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Translator</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    textarea { width: 100%; height: 120px; font-size: 16px; padding: 8px; }
+    select, button { font-size: 16px; padding: 8px; margin-top: 10px; }
+    #result { margin-top: 20px; padding: 12px; background: #f4f4f4; border-radius: 6px; white-space: pre-wrap; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>AI Translator</h1>
+
+  <textarea id="inputText" placeholder="Type text to translate..."></textarea>
+
+  <br>
+  <label for="targetLang">Translate to: </label>
+  <select id="targetLang">
+    <option value="Swedish">Swedish</option>
+    <option value="English">English</option>
+    <option value="Spanish">Spanish</option>
+    <option value="French">French</option>
+    <option value="German">German</option>
+    <option value="Arabic">Arabic</option>
+  </select>
+
+  <br>
+  <button onclick="translateText()">Translate</button>
+
+  <div id="result"></div>
+
+  <script>
+    // Change this to your EC2 public URL once deployed, e.g. "http://YOUR_EC2_IP:8000"
+    const API_BASE = "";
+
+    async function translateText() {
+      const text = document.getElementById("inputText").value;
+      const targetLang = document.getElementById("targetLang").value;
+      const resultDiv = document.getElementById("result");
+
+      if (!text.trim()) {
+        resultDiv.textContent = "Please enter some text first.";
+        return;
+      }
+
+      resultDiv.textContent = "Translating...";
+
+      try {
+        const response = await fetch(`${API_BASE}/translate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text, target_language: targetLang })
+        });
+        const data = await response.json();
+        resultDiv.textContent = data.translation;
+      } catch (err) {
+        resultDiv.textContent = "Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
