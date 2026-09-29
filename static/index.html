@@ -1,65 +1,592 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AI Translator</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-    textarea { width: 100%; height: 120px; font-size: 16px; padding: 8px; }
-    select, button { font-size: 16px; padding: 8px; margin-top: 10px; }
-    #result { margin-top: 20px; padding: 12px; background: #f4f4f4; border-radius: 6px; white-space: pre-wrap; }
-    button { cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Translator & Currency</title>
+<style>
+  :root {
+    --bg-1: #6366f1;
+    --bg-2: #8b5cf6;
+    --card-bg: #ffffff;
+    --text-main: #1e1b2e;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --success-bg: #f0fdf4;
+    --success-border: #bbf7d0;
+    --error-bg: #fef2f2;
+    --error-text: #b91c1c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    padding: 32px;
+  }
+
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 26px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .subtitle {
+    margin: 0 0 20px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tab-btn.active {
+    background: white;
+    color: var(--accent);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .lang-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  select, input[type="number"] {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-size: 14px;
+    background: #fafafa;
+    color: var(--text-main);
+  }
+
+  select { cursor: pointer; }
+
+  select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .swap-btn {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: #fafafa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .swap-btn:hover {
+    background: #eef2ff;
+    transform: rotate(180deg);
+  }
+
+  textarea {
+    width: 100%;
+    height: 120px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    color: var(--text-main);
+  }
+
+  .char-count {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  button.primary-btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  button.primary-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  button.primary-btn:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .spinner.active { display: inline-block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-box {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--success-bg);
+    border: 1.5px solid var(--success-border);
+    display: none;
+    position: relative;
+  }
+
+  .result-box.visible { display: block; }
+
+  .result-box.error {
+    background: var(--error-bg);
+    border-color: #fecaca;
+  }
+
+  .result-text {
+    font-size: 16px;
+    color: var(--text-main);
+    white-space: pre-wrap;
+    line-height: 1.5;
+    padding-right: 36px;
+  }
+
+  .result-box.error .result-text {
+    color: var(--error-text);
+  }
+
+  .detected-tag, .rate-tag {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    background: white;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .copy-btn:hover { background: #f3f4f6; }
+
+  .copy-btn.copied {
+    color: #16a34a;
+    border-color: #86efac;
+  }
+
+  .amount-result {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 22px; }
+    h1 { font-size: 22px; }
+  }
+</style>
 </head>
 <body>
-  <h1>AI Translator</h1>
+  <div class="card">
+    <h1><span id="titleIcon">🌐</span> <span id="titleText">AI Translator</span></h1>
+    <p class="subtitle" id="subtitleText">Powered by Google Gemini</p>
 
-  <textarea id="inputText" placeholder="Type text to translate..."></textarea>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="translate">🌐 Translate</button>
+      <button class="tab-btn" data-tab="currency">💱 Currency</button>
+    </div>
 
-  <br>
-  <label for="targetLang">Translate to: </label>
-  <select id="targetLang">
-    <option value="Swedish">Swedish</option>
-    <option value="English">English</option>
-    <option value="Spanish">Spanish</option>
-    <option value="French">French</option>
-    <option value="German">German</option>
-    <option value="Arabic">Arabic</option>
-  </select>
+    <!-- TRANSLATE PANEL -->
+    <div class="panel active" id="translatePanel">
+      <div class="lang-row">
+        <select id="sourceLang">
+          <option value="Auto-detect" selected>Auto-detect</option>
+          <option value="English">English</option>
+          <option value="Swedish">Swedish</option>
+          <option value="French">French</option>
+          <option value="Spanish">Spanish</option>
+          <option value="German">German</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Italian">Italian</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Turkish">Turkish</option>
+        </select>
 
-  <br>
-  <button onclick="translateText()">Translate</button>
+        <button class="swap-btn" id="swapLangBtn" title="Swap languages">⇄</button>
 
-  <div id="result"></div>
+        <select id="targetLang">
+          <option value="Swedish" selected>Swedish</option>
+          <option value="English">English</option>
+          <option value="French">French</option>
+          <option value="Spanish">Spanish</option>
+          <option value="German">German</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Italian">Italian</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Turkish">Turkish</option>
+        </select>
+      </div>
+
+      <textarea id="inputText" placeholder="Type or paste text to translate..." maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+
+      <div class="actions">
+        <button class="primary-btn" id="translateBtn">
+          <span class="spinner" id="translateSpinner"></span>
+          <span id="translateBtnLabel">Translate</span>
+        </button>
+      </div>
+
+      <div class="result-box" id="translateResultBox">
+        <span class="detected-tag" id="detectedTag" style="display:none;"></span>
+        <div class="result-text" id="translateResultText"></div>
+        <button class="copy-btn" id="copyBtn" title="Copy translation">📋</button>
+      </div>
+    </div>
+
+    <!-- CURRENCY PANEL -->
+    <div class="panel" id="currencyPanel">
+      <input type="number" id="amountInput" placeholder="Amount" value="100" min="0" step="any" style="margin-bottom:16px;">
+
+      <div class="lang-row">
+        <select id="fromCurrency">
+          <option value="USD" selected>USD - US Dollar</option>
+          <option value="EUR">EUR - Euro</option>
+          <option value="SEK">SEK - Swedish Krona</option>
+          <option value="GBP">GBP - British Pound</option>
+          <option value="JPY">JPY - Japanese Yen</option>
+          <option value="CHF">CHF - Swiss Franc</option>
+          <option value="CAD">CAD - Canadian Dollar</option>
+          <option value="AUD">AUD - Australian Dollar</option>
+          <option value="CNY">CNY - Chinese Yuan</option>
+          <option value="NOK">NOK - Norwegian Krone</option>
+          <option value="DKK">DKK - Danish Krone</option>
+          <option value="TRY">TRY - Turkish Lira</option>
+        </select>
+
+        <button class="swap-btn" id="swapCurrencyBtn" title="Swap currencies">⇄</button>
+
+        <select id="toCurrency">
+          <option value="SEK" selected>SEK - Swedish Krona</option>
+          <option value="USD">USD - US Dollar</option>
+          <option value="EUR">EUR - Euro</option>
+          <option value="GBP">GBP - British Pound</option>
+          <option value="JPY">JPY - Japanese Yen</option>
+          <option value="CHF">CHF - Swiss Franc</option>
+          <option value="CAD">CAD - Canadian Dollar</option>
+          <option value="AUD">AUD - Australian Dollar</option>
+          <option value="CNY">CNY - Chinese Yuan</option>
+          <option value="NOK">NOK - Norwegian Krone</option>
+          <option value="DKK">DKK - Danish Krone</option>
+          <option value="TRY">TRY - Turkish Lira</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="primary-btn" id="exchangeBtn">
+          <span class="spinner" id="exchangeSpinner"></span>
+          <span id="exchangeBtnLabel">Convert</span>
+        </button>
+      </div>
+
+      <div class="result-box" id="exchangeResultBox">
+        <span class="rate-tag" id="rateTag" style="display:none;"></span>
+        <div class="amount-result" id="exchangeResultText"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Change this to your EC2 public URL once deployed, e.g. "http://YOUR_EC2_IP:8000"
     const API_BASE = "";
 
-    async function translateText() {
-      const text = document.getElementById("inputText").value;
-      const targetLang = document.getElementById("targetLang").value;
-      const resultDiv = document.getElementById("result");
+    // ---------- Tabs ----------
+    const tabBtns = document.querySelectorAll(".tab-btn");
+    const panels = { translate: document.getElementById("translatePanel"), currency: document.getElementById("currencyPanel") };
+    const titleIcon = document.getElementById("titleIcon");
+    const titleText = document.getElementById("titleText");
+    const subtitleText = document.getElementById("subtitleText");
 
+    tabBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        Object.values(panels).forEach(p => p.classList.remove("active"));
+        panels[btn.dataset.tab].classList.add("active");
+
+        if (btn.dataset.tab === "translate") {
+          titleIcon.textContent = "🌐";
+          titleText.textContent = "AI Translator";
+          subtitleText.textContent = "Powered by Google Gemini";
+        } else {
+          titleIcon.textContent = "💱";
+          titleText.textContent = "Currency Converter";
+          subtitleText.textContent = "Live exchange rates";
+        }
+      });
+    });
+
+    // ---------- Translate panel ----------
+    const inputText = document.getElementById("inputText");
+    const charCount = document.getElementById("charCount");
+    const sourceLang = document.getElementById("sourceLang");
+    const targetLang = document.getElementById("targetLang");
+    const swapLangBtn = document.getElementById("swapLangBtn");
+    const translateBtn = document.getElementById("translateBtn");
+    const translateSpinner = document.getElementById("translateSpinner");
+    const translateBtnLabel = document.getElementById("translateBtnLabel");
+    const translateResultBox = document.getElementById("translateResultBox");
+    const translateResultText = document.getElementById("translateResultText");
+    const detectedTag = document.getElementById("detectedTag");
+    const copyBtn = document.getElementById("copyBtn");
+
+    inputText.addEventListener("input", () => {
+      charCount.textContent = inputText.value.length;
+    });
+
+    swapLangBtn.addEventListener("click", () => {
+      if (sourceLang.value === "Auto-detect") return;
+      const temp = sourceLang.value;
+      sourceLang.value = targetLang.value;
+      targetLang.value = temp;
+    });
+
+    async function translateText() {
+      const text = inputText.value;
       if (!text.trim()) {
-        resultDiv.textContent = "Please enter some text first.";
+        showTranslateResult("Please enter some text first.", true);
         return;
       }
 
-      resultDiv.textContent = "Translating...";
+      setTranslateLoading(true);
 
       try {
         const response = await fetch(`${API_BASE}/translate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: text, target_language: targetLang })
+          body: JSON.stringify({
+            text: text,
+            target_language: targetLang.value,
+            source_language: sourceLang.value,
+          }),
         });
+
+        if (!response.ok) throw new Error(`Server error (${response.status})`);
+
         const data = await response.json();
-        resultDiv.textContent = data.translation;
+        showTranslateResult(data.translation, false, data.detected_language);
       } catch (err) {
-        resultDiv.textContent = "Error: " + err.message;
+        showTranslateResult("Something went wrong: " + err.message, true);
+      } finally {
+        setTranslateLoading(false);
       }
     }
+
+    function setTranslateLoading(isLoading) {
+      translateBtn.disabled = isLoading;
+      translateSpinner.classList.toggle("active", isLoading);
+      translateBtnLabel.textContent = isLoading ? "Translating..." : "Translate";
+    }
+
+    function showTranslateResult(text, isError, detectedLanguage) {
+      translateResultBox.classList.add("visible");
+      translateResultBox.classList.toggle("error", isError);
+      translateResultText.textContent = text;
+
+      if (!isError && detectedLanguage && sourceLang.value === "Auto-detect") {
+        detectedTag.style.display = "inline-block";
+        detectedTag.textContent = "Detected: " + detectedLanguage;
+      } else {
+        detectedTag.style.display = "none";
+      }
+
+      copyBtn.style.display = isError ? "none" : "flex";
+      copyBtn.classList.remove("copied");
+      copyBtn.textContent = "📋";
+    }
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(translateResultText.textContent);
+        copyBtn.classList.add("copied");
+        copyBtn.textContent = "✓";
+        setTimeout(() => {
+          copyBtn.classList.remove("copied");
+          copyBtn.textContent = "📋";
+        }, 1500);
+      } catch (e) {}
+    });
+
+    translateBtn.addEventListener("click", translateText);
+    inputText.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) translateText();
+    });
+
+    // ---------- Currency panel ----------
+    const amountInput = document.getElementById("amountInput");
+    const fromCurrency = document.getElementById("fromCurrency");
+    const toCurrency = document.getElementById("toCurrency");
+    const swapCurrencyBtn = document.getElementById("swapCurrencyBtn");
+    const exchangeBtn = document.getElementById("exchangeBtn");
+    const exchangeSpinner = document.getElementById("exchangeSpinner");
+    const exchangeBtnLabel = document.getElementById("exchangeBtnLabel");
+    const exchangeResultBox = document.getElementById("exchangeResultBox");
+    const exchangeResultText = document.getElementById("exchangeResultText");
+    const rateTag = document.getElementById("rateTag");
+
+    swapCurrencyBtn.addEventListener("click", () => {
+      const temp = fromCurrency.value;
+      fromCurrency.value = toCurrency.value;
+      toCurrency.value = temp;
+    });
+
+    async function convertCurrency() {
+      const amount = parseFloat(amountInput.value);
+      if (isNaN(amount) || amount <= 0) {
+        showExchangeResult("Please enter a valid amount.", true);
+        return;
+      }
+
+      setExchangeLoading(true);
+
+      try {
+        const response = await fetch(`${API_BASE}/exchange`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: amount,
+            from_currency: fromCurrency.value,
+            to_currency: toCurrency.value,
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Server error (${response.status})`);
+
+        const data = await response.json();
+        if (data.error) {
+          showExchangeResult(data.error, true);
+        } else {
+          const formatted = data.converted_amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+          showExchangeResult(`${formatted} ${toCurrency.value}`, false, data.rate, data.date);
+        }
+      } catch (err) {
+        showExchangeResult("Something went wrong: " + err.message, true);
+      } finally {
+        setExchangeLoading(false);
+      }
+    }
+
+    function setExchangeLoading(isLoading) {
+      exchangeBtn.disabled = isLoading;
+      exchangeSpinner.classList.toggle("active", isLoading);
+      exchangeBtnLabel.textContent = isLoading ? "Converting..." : "Convert";
+    }
+
+    function showExchangeResult(text, isError, rate, date) {
+      exchangeResultBox.classList.add("visible");
+      exchangeResultBox.classList.toggle("error", isError);
+      exchangeResultText.textContent = text;
+
+      if (!isError && rate) {
+        rateTag.style.display = "inline-block";
+        rateTag.textContent = `1 ${fromCurrency.value} = ${rate.toFixed(4)} ${toCurrency.value} (${date})`;
+      } else {
+        rateTag.style.display = "none";
+      }
+    }
+
+    exchangeBtn.addEventListener("click", convertCurrency);
+    amountInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") convertCurrency();
+    });
   </script>
 </body>
 </html>
